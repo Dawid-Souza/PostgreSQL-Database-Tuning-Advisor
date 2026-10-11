@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% set cfg = edit_config or {} %}
+{% block content %}
+<section class="panel">
+  <h2>Configurações PostgreSQL</h2>
+  {% if message %}<p class="alert success">{{ message }}</p>{% endif %}
+  {% if test_result %}
+    {% if test_result.ok %}
+      <p class="alert success">Conexão OK: {{ test_result.info.database }} como {{ test_result.info.username }}</p>
+    {% else %}
+      <p class="alert error">{{ test_result.error }}</p>
+    {% endif %}
+    {% if test_result.conninfo_preview %}
+      <p class="command-preview">Conexão usada: <code>{{ test_result.conninfo_preview }}</code></p>
+    {% endif %}
+  {% endif %}
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Nome</th><th>Ambiente</th><th>Host</th><th>Banco padrão</th><th>Usuário</th><th>Senha</th><th>Ativa</th><th>Ações</th></tr></thead>
+      <tbody>
+      {% for item in postgres_configs %}
+        <tr>
+          <td>{{ item.name }}</td>
+          <td>
+            {% for env in environments %}
+              {% if env.id == item.environment_id %}{{ env.name }}{% endif %}
+            {% endfor %}
+          </td>
+          <td>{{ item.host }}:{{ item.port }}</td>
+          <td>{{ item.default_database }}</td>
+          <td>{{ item.username }}</td>
+          <td>
+            {% if item.password_available %}
+              <span class="status-badge decision-create-candidate">persistida</span>
+            {% elif item.has_password %}
+              <span class="status-badge decision-review">requer salvar novamente</span>
+            {% else %}
+              <span class="status-badge decision-skip">não salva</span>
+            {% endif %}
+          </td>
+          <td>{% if selected_postgres and selected_postgres.id == item.id %}sim{% else %}não{% endif %}</td>
+          <td class="actions">
+            <a href="/postgres?edit_id={{ item.id }}">editar</a>
+            <form method="post" action="/postgres/select"><input type="hidden" name="config_id" value="{{ item.id }}"><button type="submit">selecionar</button></form>
+            <form method="post" action="/postgres/test"><input type="hidden" name="config_id" value="{{ item.id }}"><button type="submit">testar</button></form>
+            <form method="post" action="/postgres/delete"><input type="hidden" name="config_id" value="{{ item.id }}"><button class="danger" type="submit">excluir</button></form>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="panel">
+  <h2>{{ 'Editar conexão' if edit_config else 'Nova conexão' }}</h2>
+  {% set active_env_id = cfg.environment_id or (selected_environment.id if selected_environment else '') %}
+  <form method="post" action="/postgres" class="form-grid">
+    <input type="hidden" name="id" value="{{ cfg.id or '' }}">
+    <label>Ambiente
+      <select name="environment_id" required>
+        {% for env in environments %}
+          <option value="{{ env.id }}" {% if active_env_id == env.id %}selected{% endif %}>{{ env.name }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Nome da conexão<input name="name" required value="{{ cfg.name or '' }}"></label>
+    <label>Host<input name="host" required value="{{ cfg.host or '' }}"></label>
+    <label>Porta<input type="number" min="1" max="65535" name="port" value="{{ cfg.port or 5432 }}"></label>
+    <label>Banco padrão<input name="default_database" value="{{ cfg.default_database or 'postgres' }}"></label>
+    <label>Usuário<input name="username" required value="{{ cfg.username or '' }}"></label>
+    <label>Senha<input type="password" name="password" autocomplete="new-password" placeholder="{% if cfg.has_password %}senha já informada nesta configuração{% endif %}"></label>
+    <label>Timeout de conexão (s)<input type="number" min="1" max="120" name="connect_timeout_seconds" value="{{ cfg.connect_timeout_seconds or 10 }}"></label>
+    <label>SSL mode
+      <select name="sslmode">
+        {% for mode in ['prefer', 'disable', 'require', 'verify-ca', 'verify-full'] %}
+          <option value="{{ mode }}" {% if (cfg.sslmode or 'prefer') == mode %}selected{% endif %}>{{ mode }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label class="check"><input type="checkbox" name="use_manual_dsn" data-toggle="use_manual_dsn" {% if cfg.use_manual_dsn %}checked{% endif %}> Usar DSN manual avançado</label>
+    <label class="span-2 manual-dsn-only">DSN manual
+      <input name="manual_dsn" value="{{ cfg.dsn_preview or '' }}" placeholder="postgresql://usuario:senha@host:5432/banco">
+    </label>
+    <p class="muted span-2">Para senhas com caracteres especiais, prefira host/porta/usuário/senha separados. Nesse modo não precisa URL encode. Se usar DSN manual, deixe a senha fora do DSN e preencha o campo Senha.</p>
+    <div class="form-actions span-2"><button type="submit">Salvar conexão</button></div>
+  </form>
+</section>
+{% endblock %}

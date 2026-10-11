@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="panel">
+  <h2>Logs do servidor</h2>
+  <p>Resultados processados ficam em SQLite local e podem ser revisados em histórico.</p>
+</section>
+
+<section class="panel">
+  <h2>Buscar por SSH</h2>
+  {% set log_max_bytes = settings.max_log_fetch_bytes %}
+  {% if selected_environment and selected_environment.get('max_bytes') is not none %}
+    {% set log_max_bytes = selected_environment.get('max_bytes') %}
+  {% endif %}
+  <form method="post" action="/logs/fetch" class="form-grid">
+    <input type="hidden" name="db" value="{{ selected_db or '' }}">
+    <label>Linhas finais<input type="number" step="100" min="100" max="200000" name="lines" value="{{ lines or 5000 }}"></label>
+    <label>Ignorar abaixo de ms<input type="number" step="1" min="0" name="min_ms" value="{{ min_ms }}"></label>
+    <label>Limite máximo de bytes (0 = sem limite)<input type="number" min="0" name="max_bytes" value="{{ log_max_bytes }}"></label>
+    <label class="check span-2"><input type="checkbox" name="confirm_execution"> Confirmo a execução remota via SSH/sudo/Docker/Podman</label>
+    <div class="form-actions span-2">
+      <button type="submit" name="action" value="preview">Mostrar comando</button>
+      <button type="submit" name="action" value="fetch">Buscar e analisar</button>
+    </div>
+  </form>
+  {% if fetch_command %}<p class="command-preview">Comando gerado: <code>{{ fetch_command }}</code></p>{% endif %}
+  {% if fetch_error %}<p class="alert error">{{ fetch_error }}</p>{% endif %}
+</section>
+
+<section class="panel">
+  <h2>Colar logs manualmente</h2>
+  <form method="post" action="/logs/manual" class="stack">
+    <input type="hidden" name="db" value="{{ selected_db or '' }}">
+    <label>Ignorar abaixo de ms<input type="number" step="1" min="0" name="min_ms" value="{{ min_ms }}"></label>
+    <textarea name="log_text" rows="14" placeholder="duration: 1234.567 ms  statement: SELECT ...">{{ log_text }}</textarea>
+    <button type="submit">Analisar logs colados</button>
+  </form>
+</section>
+
+{% if runs %}
+<section class="panel">
+  <h2>Análises recentes</h2>
+  <div class="history-actions">
+    <form method="post" action="/history/delete-selected" id="recent-delete-selected">
+      <input type="hidden" name="return_to" value="/logs">
+      <button class="danger" type="submit">Excluir selecionados</button>
+    </form>
+    <form method="post" action="/history/delete-all" class="inline-form">
+      <input type="hidden" name="return_to" value="/logs">
+      <label>Digite LIMPAR para apagar tudo<input name="confirm_text" autocomplete="off"></label>
+      <button class="danger" type="submit">Limpar histórico</button>
+    </form>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th><input type="checkbox" data-select-all="recent-run"></th><th>ID</th><th>Data UTC</th><th>Banco</th><th>Origem</th><th>Entradas</th><th>Grupos</th><th>Recs</th><th></th></tr></thead>
+      <tbody>
+      {% for run in runs %}
+        <tr>
+          <td><input form="recent-delete-selected" type="checkbox" name="run_ids" value="{{ run.id }}" data-select-item="recent-run"></td>
+          <td>{{ run.id }}</td>
+          <td>{{ run.created_at }}</td>
+          <td>{{ run.database_name }}</td>
+          <td>{{ run.source }}</td>
+          <td>{{ run.entries_count }}</td>
+          <td>{{ run.groups_count }}</td>
+          <td>{{ run.recommendations_count }}</td>
+          <td><a href="/logs?run_id={{ run.id }}">abrir</a></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
+
+{% if result %}
+<section class="panel">
+  <h2>Resumo dos logs</h2>
+  <p>
+    Execução <code>#{{ result.run_id }}</code> ·
+    Origem <code>{{ result.run.source }}</code> ·
+    Entradas {{ result.entries_count }} ·
+    Ignoradas {{ result.ignored_count }} ·
+    Grupos {{ result.groups_count }} ·
+    Recomendações {{ result.recommendations_count }}
+  </p>
+  {% if result.run.raw_truncated %}<p class="alert warn">Retorno truncado pelo limite máximo de bytes. Use 0 para buscar sem limite definido pelo app.</p>{% endif %}
+  {% if result.run.fetch_error %}<p class="alert warn">{{ result.run.fetch_error }}</p>{% endif %}
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Chamadas</th><th>Total ms</th><th>Média ms</th><th>Máx ms</th><th>Query normalizada</th></tr></thead>
+      <tbody>
+      {% for group in result.groups %}
+        <tr><td>{{ group.calls }}</td><td>{{ group.total_ms }}</td><td>{{ group.mean_ms }}</td><td>{{ group.max_ms }}</td><td><code>{{ group.normalized_query[:220] }}</code></td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% set gp = result.group_pagination %}
+  <p class="pagination">
+    Grupos: página {{ gp.page }} de {{ gp.pages }} · total {{ gp.total }}
+    {% if gp.page > 1 %}<a href="/logs?run_id={{ result.run_id }}&group_page={{ gp.page - 1 }}&rec_page={{ result.rec_pagination.page }}">anterior</a>{% endif %}
+    {% if gp.page < gp.pages %}<a href="/logs?run_id={{ result.run_id }}&group_page={{ gp.page + 1 }}&rec_page={{ result.rec_pagination.page }}">próxima</a>{% endif %}
+  </p>
+</section>
+{% set recs = result.recommendations %}
+{% include "partials_recs.html" %}
+{% endif %}
+{% endblock %}

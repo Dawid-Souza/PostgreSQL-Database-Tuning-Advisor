@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="panel">
+  <h2>Login futuro</h2>
+  <p>A autenticação completa ainda não está ativa. A estrutura já separa rotas públicas e operacionais para receber login real.</p>
+  <h3>Rotas que devem ser protegidas</h3>
+  <ul>
+    {% for route in protected_routes %}
+      <li><code>{{ route }}</code></li>
+    {% endfor %}
+  </ul>
+  <h3>Riscos atuais</h3>
+  <p>Não exponha este painel em rede sem autenticação. Ele pode guardar metadados de servidores, gerar comandos remotos e acessar catálogos PostgreSQL.</p>
+</section>
+{% endblock %}
+

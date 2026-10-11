@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="panel">
+  <h2>Histórico de análises</h2>
+  {% if message %}<p class="alert success">{{ message }}</p>{% endif %}
+  <div class="history-actions">
+    <form method="post" action="/history/delete-selected" id="history-delete-selected">
+      <input type="hidden" name="return_to" value="/history">
+      <button class="danger" type="submit">Excluir selecionados</button>
+    </form>
+    <form method="post" action="/history/delete-all" class="inline-form">
+      <input type="hidden" name="return_to" value="/history">
+      <label>Digite LIMPAR para apagar tudo<input name="confirm_text" autocomplete="off"></label>
+      <button class="danger" type="submit">Limpar histórico</button>
+    </form>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th><input type="checkbox" data-select-all="history-run"></th><th>ID</th><th>Data UTC</th><th>Banco</th><th>Ambiente</th><th>Origem</th><th>Entradas</th><th>Grupos</th><th>Recs</th><th>Comando</th></tr></thead>
+      <tbody>
+      {% for run in runs %}
+        <tr>
+          <td><input form="history-delete-selected" type="checkbox" name="run_ids" value="{{ run.id }}" data-select-item="history-run"></td>
+          <td><a href="/logs?run_id={{ run.id }}">{{ run.id }}</a></td>
+          <td>{{ run.created_at }}</td>
+          <td>{{ run.database_name }}</td>
+          <td>{{ run.environment_id or 'n/d' }}</td>
+          <td>{{ run.source }}</td>
+          <td>{{ run.entries_count }}</td>
+          <td>{{ run.groups_count }}</td>
+          <td>{{ run.recommendations_count }}</td>
+          <td><code>{{ (run.command or '')[:160] }}</code></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

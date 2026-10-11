@@ -1,0 +1,33 @@
+<section class="panel">
+  <h2>Recomendações</h2>
+  {% if not recs %}
+    <p class="muted">Nenhuma recomendação gerada para este conjunto de dados.</p>
+  {% endif %}
+  {% for rec in recs %}
+    <article class="rec {{ rec.severity }}">
+      <div class="rec-head">
+        <strong>{{ rec.title }}</strong>
+        <span>{{ rec.kind }} · {{ rec.severity }} · confiança {{ '%.0f'|format(rec.confidence * 100) }}%</span>
+      </div>
+      <p>{{ rec.detail }}</p>
+      {% if rec.evidence and rec.evidence.index_comparison %}
+        {% set comparison = rec.evidence.index_comparison %}
+        {% set status = comparison.status or 'unknown' %}
+        {% set decision = comparison.decision or 'unknown' %}
+        <div class="compare-box">
+          <strong>Comparação com índices existentes</strong>
+          <div class="badge-row">
+            <span class="status-badge status-{{ status|replace('_', '-') }}">Status: {{ status }}</span>
+            <span class="status-badge decision-{{ decision|replace('_', '-') }}">Decisão: {{ decision }}</span>
+          </div>
+          <p>{{ comparison.reason }}</p>
+          {% if comparison.best_match %}
+            <p>Melhor índice relacionado: <code>{{ comparison.best_match.index_name }}</code></p>
+          {% endif %}
+        </div>
+      {% endif %}
+      {% if rec.sql %}<pre>{{ rec.sql }}</pre>{% endif %}
+      <details><summary>Evidência</summary><pre>{{ rec.evidence | pretty_json }}</pre></details>
+    </article>
+  {% endfor %}
+</section>

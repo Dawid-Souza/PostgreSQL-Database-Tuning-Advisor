@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="panel">
+  <h2>Catálogo PostgreSQL</h2>
+  <p>Diagnóstico estrutural usando catálogos nativos do banco selecionado.</p>
+  {% if error %}<p class="alert error">{{ error }}</p>{% endif %}
+</section>
+
+{% if snapshot.database %}
+<section class="panel">
+  <h2>Banco</h2>
+  <div class="metric-grid">
+    <div><span>Database</span><strong>{{ snapshot.database.database }}</strong></div>
+    <div><span>Tamanho</span><strong>{{ snapshot.database.size_pretty }}</strong></div>
+  </div>
+</section>
+
+<section class="panel">
+  <h2>Maiores tabelas</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Tabela</th><th>Tamanho</th><th>Linhas estimadas</th><th>Seq scan</th><th>Idx scan</th><th>Último analyze</th></tr></thead>
+      <tbody>
+      {% for table in snapshot.largest_tables %}
+        <tr>
+          <td>{{ table.schema_name }}.{{ table.table_name }}</td>
+          <td>{{ table.total_size }}</td>
+          <td>{{ table.estimated_rows }}</td>
+          <td>{{ table.seq_scan }}</td>
+          <td>{{ table.idx_scan }}</td>
+          <td>{{ table.last_analyze or table.last_autoanalyze or 'n/d' }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
+
+{% include "partials_recs.html" %}
+{% endblock %}
+

@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="panel">
+  <h2>Dashboard</h2>
+  <div class="metric-grid">
+    <div><span>Ambientes cadastrados</span><strong>{{ environments | length }}</strong></div>
+    <div><span>Conexões PostgreSQL</span><strong>{{ postgres_configs | length }}</strong></div>
+    <div><span>Banco selecionado</span><strong>{{ selected_db or 'n/d' }}</strong></div>
+  </div>
+</section>
+
+<section class="panel">
+  <h2>Conexão PostgreSQL</h2>
+  {% if conn.ok %}
+    <div class="metric-grid">
+      <div><span>Banco</span><strong>{{ conn.info.database }}</strong></div>
+      <div><span>Usuário</span><strong>{{ conn.info.username }}</strong></div>
+      <div><span>Servidor</span><strong>{{ conn.info.server_addr or 'n/d' }}:{{ conn.info.server_port or 'n/d' }}</strong></div>
+    </div>
+    <p class="muted">{{ conn.info.version }}</p>
+  {% else %}
+    <p class="alert error">{{ conn.error }}</p>
+  {% endif %}
+</section>
+
+{% if catalog.database %}
+<section class="panel">
+  <h2>Banco selecionado</h2>
+  <div class="metric-grid">
+    <div><span>Database</span><strong>{{ catalog.database.database }}</strong></div>
+    <div><span>Tamanho</span><strong>{{ catalog.database.size_pretty }}</strong></div>
+  </div>
+</section>
+
+<section class="panel">
+  <h2>Maiores tabelas</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Tabela</th><th>Tamanho</th><th>Linhas estimadas</th><th>Seq scan</th><th>Idx scan</th><th>Mod desde analyze</th></tr></thead>
+      <tbody>
+      {% for table in catalog.largest_tables %}
+        <tr>
+          <td>{{ table.schema_name }}.{{ table.table_name }}</td>
+          <td>{{ table.total_size }}</td>
+          <td>{{ table.estimated_rows }}</td>
+          <td>{{ table.seq_scan }}</td>
+          <td>{{ table.idx_scan }}</td>
+          <td>{{ table.n_mod_since_analyze }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
+
+<section class="panel">
+  <h2>Workload opcional</h2>
+  {% if workload_error %}
+    <p class="alert warn">pg_stat_statements indisponível. O app continua funcionando por catálogo, SQL e logs lentos.</p>
+    <pre>{{ workload_error }}</pre>
+  {% elif workload %}
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Chamadas</th><th>Total ms</th><th>Média ms</th><th>Query</th></tr></thead>
+        <tbody>
+        {% for item in workload %}
+          <tr><td>{{ item.calls }}</td><td>{{ item.total_exec_time_ms }}</td><td>{{ item.mean_exec_time_ms }}</td><td><code>{{ item.query[:180] }}</code></td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="muted">Sem workload carregado.</p>
+  {% endif %}
+</section>
+{% endblock %}

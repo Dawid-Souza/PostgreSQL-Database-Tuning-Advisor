@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="panel">
+  <h2>Analisar SQL</h2>
+  <form method="post" action="/query" class="stack">
+    <input type="hidden" name="db" value="{{ selected_db or '' }}">
+    <textarea name="query" rows="12" placeholder="SELECT ...">{{ query }}</textarea>
+    <label class="check"><input type="checkbox" name="analyze" {% if analyze %}checked{% endif %}> Usar EXPLAIN ANALYZE, BUFFERS</label>
+    <button type="submit">Analisar</button>
+  </form>
+  {% if error %}<p class="alert error">{{ error }}</p>{% endif %}
+</section>
+
+{% if recs %}
+  {% include "partials_recs.html" %}
+{% endif %}
+
+{% if plan %}
+<section class="panel">
+  <h2>Plano JSON</h2>
+  <pre>{{ plan | pretty_json }}</pre>
+</section>
+{% endif %}
+{% endblock %}
+

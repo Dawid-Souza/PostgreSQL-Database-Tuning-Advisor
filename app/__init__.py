@@ -1,0 +1,2 @@
+"""PostgreSQL advisor web application."""
+

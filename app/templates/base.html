@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ settings.app_name }}</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <aside class="sidebar">
+    <h1>PostgreSQL Database Tuning Advisor</h1>
+    <p>Advisor PostgreSQL com contexto local</p>
+    <nav>
+      <a href="/">Dashboard</a>
+      <a href="/environments">Ambientes</a>
+      <a href="/postgres">PostgreSQL</a>
+      <a href="/catalog">Catálogo</a>
+      <a href="/query">Analisar SQL</a>
+      <a href="/logs">Logs</a>
+      <a href="/history">Histórico</a>
+      <a href="/history">Login (Em Desenvolvimento)</a>
+    </nav>
+  </aside>
+  <main class="page">
+    <header class="topbar">
+      <div>
+        <strong>Ambiente:</strong>
+        <span>{{ selected_environment.name if selected_environment else 'não selecionado' }}</span>
+      </div>
+      <div>
+        <strong>PostgreSQL:</strong>
+        <span>{{ selected_postgres.name if selected_postgres else 'não selecionado' }}</span>
+      </div>
+      {% if databases %}
+      <form method="get" action="{{ request.url.path }}" class="db-picker">
+        <input type="hidden" name="set_db" value="1">
+        <label for="db">Banco</label>
+        <select id="db" name="db" onchange="this.form.submit()">
+          {% for database in databases %}
+            <option value="{{ database }}" {% if database == selected_db %}selected{% endif %}>{{ database }}</option>
+          {% endfor %}
+        </select>
+      </form>
+      {% endif %}
+    </header>
+    {% if database_error %}
+      <p class="alert error">{{ database_error }}</p>
+    {% endif %}
+    {% block content %}{% endblock %}
+  </main>
+  <script src="/static/ui.js"></script>
+</body>
+</html>

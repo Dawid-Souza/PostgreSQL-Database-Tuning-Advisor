@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="panel">
+  <h2>Recomendações - {{ source }}</h2>
+  {% if error %}<p class="alert error">{{ error }}</p>{% endif %}
+  <p>SQL gerado deve ser revisado por DBA antes de execução em produção.</p>
+</section>
+{% include "partials_recs.html" %}
+{% endblock %}
+

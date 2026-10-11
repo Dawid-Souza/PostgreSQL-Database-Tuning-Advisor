@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% set env = edit_environment or {} %}
+{% set env_max_bytes = env.get('max_bytes') %}
+{% set current_log_mode = env.log_mode or ('file' if env.environment_type == 'direct' else 'container') %}
+{% if env.environment_type == 'direct' and current_log_mode == 'container' %}
+  {% set current_log_mode = 'file' %}
+{% endif %}
+{% block content %}
+<section class="panel">
+  <h2>Configurações de ambiente</h2>
+  {% if message %}<p class="alert success">{{ message }}</p>{% endif %}
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Nome</th><th>Tipo</th><th>Host</th><th>SSH</th><th>Container</th><th>Ativo</th><th>Ações</th></tr></thead>
+      <tbody>
+      {% for item in environments %}
+        <tr>
+          <td>{{ item.name }}</td>
+          <td>{{ item.environment_type }}</td>
+          <td>{{ item.host }}</td>
+          <td>{{ item.ssh_login }}:{{ item.ssh_port }}</td>
+          <td>{{ item.container_name or 'n/d' }}</td>
+          <td>{% if selected_environment and selected_environment.id == item.id %}sim{% else %}não{% endif %}</td>
+          <td class="actions">
+            <a href="/environments?edit_id={{ item.id }}">editar</a>
+            <form method="post" action="/environments/select"><input type="hidden" name="environment_id" value="{{ item.id }}"><button type="submit">selecionar</button></form>
+            <form method="post" action="/environments/delete"><input type="hidden" name="environment_id" value="{{ item.id }}"><button class="danger" type="submit">excluir</button></form>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="panel">
+  <h2>{{ 'Editar ambiente' if edit_environment else 'Novo ambiente' }}</h2>
+  <form method="post" action="/environments" class="form-grid js-environment-form">
+    <input type="hidden" name="id" value="{{ env.id or '' }}">
+    <label>Nome do ambiente<input name="name" required value="{{ env.name or '' }}"></label>
+    <label>Tipo de ambiente
+      <select name="environment_type" data-toggle="environment_type">
+        <option value="container" {% if env.environment_type != 'direct' %}selected{% endif %}>Container</option>
+        <option value="direct" {% if env.environment_type == 'direct' %}selected{% endif %}>Instalação direta no servidor/VM</option>
+      </select>
+    </label>
+    <label>Host/IP da instância<input name="host" required value="{{ env.host or '' }}"></label>
+    <label>Porta SSH<input type="number" min="1" max="65535" name="ssh_port" value="{{ env.ssh_port or 22 }}"></label>
+    <label>Login SSH<input name="ssh_login" required value="{{ env.ssh_login or '' }}"></label>
+    <label>Método SSH
+      <select name="ssh_auth_method" data-toggle="ssh_auth_method">
+        <option value="password" {% if env.ssh_auth_method != 'key' %}selected{% endif %}>senha</option>
+        <option value="key" {% if env.ssh_auth_method == 'key' %}selected{% endif %}>chave privada</option>
+      </select>
+    </label>
+    <label class="ssh-password-only">Senha SSH
+      <input type="password" name="ssh_password" autocomplete="new-password" placeholder="{% if env.has_ssh_password %}senha já informada nesta configuração{% endif %}">
+    </label>
+    <label class="ssh-key-only">Caminho da chave privada<input name="ssh_key_path" value="{{ env.ssh_key_path or '' }}"></label>
+    <label>Caminho base da aplicação<input name="base_path" value="{{ env.base_path or '' }}"></label>
+    <label>Timeout de conexão<input type="number" min="1" max="300" name="timeout_seconds" value="{{ env.timeout_seconds or 20 }}"></label>
+    <label class="span-2">Observações<textarea name="notes" rows="3">{{ env.notes or '' }}</textarea></label>
+
+    <label class="check"><input type="checkbox" name="use_sudo" data-toggle="use_sudo" {% if env.use_sudo %}checked{% endif %}> Usar sudo</label>
+    <label class="sudo-only">Usuário sudo<input name="sudo_user" value="{{ env.sudo_user or '' }}"></label>
+    <label class="sudo-only check"><input type="checkbox" name="sudo_password_from_ssh" data-toggle="sudo_password_from_ssh" {% if env.sudo_password_from_ssh %}checked{% endif %}> Usar mesma senha do SSH para sudo</label>
+    <label class="sudo-only sudo-password-only">Senha sudo
+      <input type="password" name="sudo_password" autocomplete="new-password" placeholder="{% if env.has_sudo_password %}senha já informada nesta configuração{% endif %}">
+    </label>
+
+    <label class="container-only">Nome ou ID do container<input name="container_name" value="{{ env.container_name or '' }}"></label>
+    <label class="container-only">Runtime
+      <select name="container_runtime">
+        <option value="docker" {% if env.container_runtime != 'podman' %}selected{% endif %}>Docker</option>
+        <option value="podman" {% if env.container_runtime == 'podman' %}selected{% endif %}>Podman</option>
+      </select>
+    </label>
+    <label class="container-only">Diretório interno da aplicação<input name="container_app_dir" value="{{ env.container_app_dir or '' }}"></label>
+    <label class="container-only">Usuário interno do container<input name="container_user" value="{{ env.container_user or '' }}"></label>
+    <label class="container-only check"><input type="checkbox" name="use_container_exec" {% if env.use_container_exec %}checked{% endif %}> Usar docker exec/podman exec</label>
+
+    <label>Modo de logs
+      <select name="log_mode">
+        <option value="container" {% if current_log_mode == 'container' %}selected{% endif %}>SSH + Docker/Podman logs</option>
+        <option value="file" {% if current_log_mode == 'file' %}selected{% endif %}>SSH + arquivo de log</option>
+        <option value="custom" {% if current_log_mode == 'custom' %}selected{% endif %}>SSH + comando customizado</option>
+      </select>
+    </label>
+    <label>Arquivo de log<input name="log_file_path" value="{{ env.log_file_path or '' }}" placeholder="vazio = detectar automaticamente em instalação direta"></label>
+    <label class="span-2">Comando base de logs<input name="log_base_command" value="{{ env.log_base_command or '' }}" placeholder="docker logs --tail {lines} {container} 2>&1"></label>
+    <label class="span-2">Comando customizado<input name="custom_log_command" value="{{ env.custom_log_command or '' }}" placeholder="tail -n {lines} /var/log/postgresql/postgresql.log"></label>
+    <label>Linhas padrão<input type="number" min="100" max="200000" name="default_lines" value="{{ env.default_lines or 5000 }}"></label>
+    <label>Limite máximo de bytes (0 = sem limite)<input type="number" min="0" name="max_bytes" value="{{ env_max_bytes if env_max_bytes is not none else 0 }}"></label>
+    <div class="form-actions span-2"><button type="submit">Salvar ambiente</button></div>
+  </form>
+</section>
+{% endblock %}
