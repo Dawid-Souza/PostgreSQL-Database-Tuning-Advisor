@@ -11,7 +11,7 @@ Suporte a Linux e docker em linux, o suporte ao postgresql no Windows ainda est�
 <img width="1914" height="910" alt="image" src="https://github.com/user-attachments/assets/1b46081a-d580-4fcb-927d-b693a2a9e360" />
 
 Tela de Configuração da Instancia/Cluster, nessa tela deve ser feito o cadastro do cluster e vinculado a instância.
-Mesmo que seu servidor so tenha um cluster do postgresql deve ser cadastrado e vinculado aqui, fiz nesse modelo deivido a forma que uso
+Mesmo que seu servidor so tenha um cluster do postgresql deve ser cadastrado e vinculado aqui, fiz nesse modelo devido a forma que uso
 tenho mais de um cluster rodando no mesmo servidor, um cluster 'local' e um em docker.
 
 <img width="1919" height="854" alt="image" src="https://github.com/user-attachments/assets/45a9ecf0-8bab-41aa-8098-dbe6724cd65b" />
