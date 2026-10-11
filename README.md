@@ -2,6 +2,21 @@
 
 Painel web local para diagnóstico de carga e estrutura no PostgreSQL. O operador cadastra o ambiente e a conexão pela interface, escolhe o banco e recebe recomendações de índice, estatísticas, modelagem e manutenção. O SQL gerado fica para revisão: a aplicação no servidor continua manual.
 
+Tela Principal (Dashboard)
+<img width="1919" height="648" alt="image" src="https://github.com/user-attachments/assets/841442f2-652e-4f6d-909c-d44f42057de9" />
+
+Tela de Configuração do Ambiente (Servidor)
+Suporte a Linux e docker em linux, o suporte ao postgresql no Windows ainda está meio limitado mas estou trabalhando nessa parte. :D
+
+<img width="1914" height="910" alt="image" src="https://github.com/user-attachments/assets/1b46081a-d580-4fcb-927d-b693a2a9e360" />
+
+Tela de Configuração da Instancia/Cluster, nessa tela deve ser feito o cadastro do cluster e vinculado a instância.
+Mesmo que seu servidor so tenha um cluster do postgresql deve ser cadastrado e vinculado aqui, fiz nesse modelo deivido a forma que uso
+tenho mais de um cluster rodando no mesmo servidor, um cluster 'local' e um em docker.
+
+<img width="1919" height="854" alt="image" src="https://github.com/user-attachments/assets/45a9ecf0-8bab-41aa-8098-dbe6724cd65b" />
+
+
 O pacote FastAPI usa `Postgresql Database Tuning Advisor` (versão 1.0.0). Com ambientes, cofre local e histórico em SQLite.
 
 ![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)
